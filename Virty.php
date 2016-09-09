@@ -2,6 +2,7 @@
 namespace Qaribou\Templating;
 
 use DOMDocument;
+use Traversable;
 
 class Virty
 {
@@ -31,14 +32,19 @@ class Virty
         }
 
         foreach ($childSets as $children) {
-            if (! is_array($children)) {
+            if (! is_array($children) && ! $children instanceof Traversable) {
                 $domNode->appendChild($this->doc->createTextNode($children));
             } else {
                 foreach ($children as $child) {
                     if (is_array($child)) {
                         $domNode->appendChild($this->createNode($child));
-                    } else {
+                    } elseif (is_string(child)) {
                         $domNode->appendChild($this->doc->createTextNode($child));
+                    } else {
+                        throw new \RuntimeException(
+                            'Invalid child node given: ' . json_encode($child) .
+                            ' for child set ' . json_encode($children)
+                        );
                     }
                 }
             }
