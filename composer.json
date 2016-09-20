@@ -1,13 +1,21 @@
 {
-    "name": "jkoudys/virty",
-    "description": "PHP is good with arrays, so let's keep it array until the end when we template! Makes it easy to design for both HTML and JSON targets, and ensures your HTML is well formed. Mostly, it's just easy to `array_map` in.",
-    "type": "composer-plugin",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "jkoudys",
-            "email": "josh@qaribou.com"
-        }
-    ],
-    "require": {}
+  "name": "jkoudys/virty",
+  "description": "PHP is good with arrays, so let's keep it array until the end when we template! Makes it easy to design for both HTML and JSON targets, and ensures your HTML is well formed. Mostly, it's just easy to `array_map` in.",
+  "type": "composer-plugin",
+  "keywords": ["templating", "template", "async", "virtual dom", "domdocument", "no whitespace"],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "jkoudys",
+      "email": "josh@qaribou.com"
+    }
+  ],
+  "require": {
+    "guzzlehttp/guzzle": "^6.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "Qaribou\\": "src/"
+    }
+  }
 }
