@@ -2,54 +2,63 @@
 namespace Qaribou\Templating;
 
 use DOMDocument;
-use Traversable;
+use DOMNode;
 
+// TODO: allow switching between docs, one load could render multiple docs.
 class Virty
 {
-    public $doc;
+    protected static $doc;
 
-    public function __construct(DOMDocument $doc = null)
+    public static function init(DOMDocument $targetDoc = null)
     {
-        if ($doc) {
-            return $this->doc = $doc;
+        if ($targetDoc) {
+            self::$doc = $targetDoc;
+        } elseif (!self::$doc) {
+            $doc = new DOMDocument();
+            $doc->preserveWhiteSpace = false;
+            $doc->formatOutput = false;
+
+            self::$doc = $doc;
         }
-        $doc = new DOMDocument();
-        $doc->preserveWhiteSpace = false;
-        $doc->formatOutput = false;
-        return $this->doc = $doc;
+
+        return self::$doc;
     }
 
-    public function createNode(array $el)
+    public static function getDoc()
     {
-        list( $name, $attributes ) = $el;
-        $childSets = array_slice($el, 2);
-        $domNode = $this->doc->createElement($name);
-
-        if ($attributes) {
-            foreach ($attributes as $k => $v) {
-                $domNode->setAttribute($k, $v);
-            }
-        }
-
-        foreach ($childSets as $children) {
-            if (! is_array($children) && ! $children instanceof Traversable) {
-                $domNode->appendChild($this->doc->createTextNode($children));
-            } else {
-                foreach ($children as $child) {
-                    if (is_array($child)) {
-                        $domNode->appendChild($this->createNode($child));
-                    } elseif (is_string(child)) {
-                        $domNode->appendChild($this->doc->createTextNode($child));
-                    } else {
-                        throw new \RuntimeException(
-                            'Invalid child node given: ' . json_encode($child) .
-                            ' for child set ' . json_encode($children)
-                        );
-                    }
-                }
-            }
-        }
-
-        return $domNode;
+        return self::$doc;
     }
+
+    public static function render(DOMNode $root): string
+    {
+        self::$doc->appendChild($root);
+        return self::$doc->saveHTML();
+    }
+}
+
+function createElement($el, array $props = null, ...$children): DOMNode
+{
+    $doc = Virty::init();
+
+    $domNode = $doc->createElement($el);
+
+    if ($props) {
+        foreach ($props as $k => $v) {
+            $domNode->setAttribute($k, $v);
+        }
+    }
+
+    foreach ($children as $child) {
+        if ($child instanceof DOMNode) {
+            $domNode->appendChild($child);
+        } elseif (is_string($child)) {
+            $domNode->appendChild($doc->createTextNode($child));
+        } else {
+            throw new \InvalidArgumentException(
+                'Invalid child node given: ' . json_encode($child)
+            );
+        }
+    }
+
+    return $domNode;
 }

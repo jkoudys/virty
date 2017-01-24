@@ -2,12 +2,10 @@
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../src/Templating/Virty.php';
 
-use Qaribou\Templating\Virty;
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise;
-
-// Build a new document
-$virty = new Virty();
+use Qaribou\Templating\Virty;
+use function Qaribou\Templating\createElement as ce;
 
 // Simple arrays are simple, and can be easily mapped in later
 $shop_cart = [
@@ -20,7 +18,7 @@ $shop_cart = [
 function doTimes($foo = 5)
 {
     for ($i = 0; $i < $foo; $i++) {
-        yield ['li', ['class' => 'doing'], 'Do number ' . $i];
+        yield ce('li', ['class' => 'doing'], 'Do number ' . $i);
     }
 }
 
@@ -38,34 +36,44 @@ $cities = array_map(
     ['calgary', 'regina', 'edmonton']
 );
 
-$virty->doc->appendChild($virty->createNode(
-    ['main', ['data-name' => 'main section'], [
-        ['h1', null, 'Hello to all! Here\'s how I template! It\'s concise, easy to manage datasets & works well with special chars.'],
-        ['p', ['class' => 'foobar'], 'Expensive items: ', [
-            ['ul', null, [
-                ['li', ['class' => 'test'], '<script>alert("I am hax0ring you!");</script>'],
-            ], array_map(
-                function ($item) {
-                    return ['li', ['class' => 'expensive_item'], $item['name']];
-                },
-                array_filter(
-                    $shop_cart,
+echo Virty::render(ce('main', ['class' => 'hello'], 'Hello, ', ce('span', [], 'World!')));
+echo Virty::render(
+    ce('main', ['data-name' => 'main section'],
+        ce('h1', null, 'Hello to all! Here\'s how I template! It\'s concise, easy to manage datasets & works well with special chars.'),
+        ce('p', ['class' => 'foobar'], 'Expensive items: ',
+            ce('ul', null,
+                ce('li', ['class' => 'test'], '<script>alert("I am hax0ring you!");</script>'),
+                ...array_map(
                     function ($item) {
-                        return $item['price'] > 200;
-                    }
+                        return ce('li', ['class' => 'expensive_item'], $item['name']);
+                    },
+                    array_filter(
+                        $shop_cart,
+                        function ($item) {
+                            return $item['price'] > 200;
+                        }
+                    )
+                ),
+                ...doTimes(3)
+            )
+        ),
+        $immar->map(function ($v) { return ce('p', null, $v); }),
+        ce('article', null,
+            ce('img', ['src' => 'foo.png']),
+            ce('h1', null, 'Cities'),
+            ce('ul', ['class' => 'cities'],
+                ...array_map(
+                    function ($city) {
+                        return (
+                            ce('li', null,
+                                ce('h1', null, $city['name']),
+                                ce('p', null, $city['shortDescription'])
+                            )
+                        );
+                    },
+                    Promise\unwrap($cities)
                 )
-            ), doTimes(3)],
-        ]],
-        ['article', null, [
-            ['img', ['src' => 'foo.png']],
-            ['h1', null, 'Cities'],
-            ['ul', ['class' => 'cities'], array_map(function ($city) {
-                return ['li', null, [
-                    ['h1', null, $city['name']],
-                    ['p', null, $city['shortDescription']],
-                ]];
-            }, Promise\unwrap($cities))],
-        ]],
-    ]]
-));
-echo $virty->doc->saveHTML();
+            )
+        )
+    )
+);
